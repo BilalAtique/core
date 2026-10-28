@@ -1237,6 +1237,13 @@
           2,
           3,
         ]),
+        'ssidOverrides': list([
+          dict({
+            'psk': '**REDACTED**',
+            'ssid': '**REDACTED**',
+            'ssidEnable': True,
+          }),
+        ]),
         'status': 14,
         'statusCategory': 1,
         'supportHwOffload': False,

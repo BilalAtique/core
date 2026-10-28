@@ -1,6 +1,7 @@
 """Tests for TP-Link Omada diagnostics."""
 
 import json
+from unittest.mock import AsyncMock
 
 from pytest_homeassistant.common import MockConfigEntry, async_load_json_array_fixture
 from pytest_homeassistant.components.diagnostics import get_diagnostics_for_config_entry
@@ -17,6 +18,7 @@ async def test_entry_diagnostics(
     hass: HomeAssistant,
     hass_client: ClientSessionGenerator,
     init_integration: MockConfigEntry,
+    mock_omada_site_client: AsyncMock,
     snapshot: SnapshotAssertion,
 ) -> None:
     """Test config entry diagnostics payload and redaction."""
@@ -29,6 +31,11 @@ async def test_entry_diagnostics(
         client["mac"]: OmadaWirelessClient(client)
         for client in connected_clients_data[:2]
     }
+
+    # A gateway with built-in Wi-Fi reports each SSID with its pre-shared key.
+    mock_omada_site_client.get_gateway.return_value.raw_data["ssidOverrides"] = [
+        {"ssid": "OFFICE_SSID", "psk": "OFFICE_WIFI_KEY", "ssidEnable": True}
+    ]
 
     result = await get_diagnostics_for_config_entry(hass, hass_client, init_integration)
 
@@ -51,6 +58,7 @@ async def test_entry_diagnostics(
     assert "2E-DC-E1-C4-37-D3" not in payload
     assert "192.168.1.177" not in payload
     assert "OFFICE_SSID" not in payload
+    assert "OFFICE_WIFI_KEY" not in payload
     assert "140.100.128.10" not in payload
 
     assert result == snapshot(exclude=props("entry_id", "created_at", "modified_at"))
